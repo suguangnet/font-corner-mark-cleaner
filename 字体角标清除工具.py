@@ -128,6 +128,14 @@ def process_font(in_path, out_path, progress_cb=None, log_cb=None):
             contours_removed += r
             # 重算该字形包围盒
             glyph.recalcBounds(glyf)
+            # 关键：同步更新水平度量。
+            # 删除左上角角标后，字形真实左边界(xMin)变大了，但 hmtx 里的左边距(lsb)
+            # 仍是角标存在时的旧值。GDI/DirectWrite 渲染时会按 lsb 平移字形，
+            # 导致字的位置偏移。保持字宽(advanceWidth)不变、把 lsb 对齐到新的 xMin，
+            # 即可让字位置保持不动（与在字体软件里手动删除的效果一致）。
+            aw, _ = font["hmtx"][gname]
+            new_lsb = glyph.xMin if glyph.numberOfContours > 0 and hasattr(glyph, "xMin") else 0
+            font["hmtx"][gname] = (aw, int(new_lsb))
             if log_cb and glyphs_changed <= 8:
                 log_cb(f"  · {gname}: 删除 {r} 个角标轮廓")
         if progress_cb and (i % 200 == 0 or i == total - 1):
