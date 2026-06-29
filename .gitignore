@@ -1,0 +1,7 @@
+# 临时与敏感文件
+.repo.json
+*token*.txt
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
